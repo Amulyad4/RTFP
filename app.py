@@ -49,5 +49,3 @@ if st.button("Translate"):
     else:
         st.warning("Please enter some text to translate.")
 
-st.markdown("---")
-st.caption("Powered by Google's Generative AI & Streamlit")
