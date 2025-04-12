@@ -1,40 +1,53 @@
-import streamlit as st  # Import the Streamlit library
-import random  # Import the random library
-import time  # Import the time library
+import os
+import streamlit as st
+import google.generativeai as genai
+import langdetect  # To detect the language of input text
+from dotenv import load_dotenv
 
-# Creating a title for our streamlit web application
-st.title("సాధారణ చాట్")  # Set the title of the web application (in Telugu)
+load_dotenv()
+GENAI_API_KEY = os.getenv("GENAI_API_KEY")
+if not GENAI_API_KEY:
+    st.error("API key is missing! Please set GENAI_API_KEY in .env file.")
+else:
+    genai.configure(api_key=GENAI_API_KEY)
 
-# Initializing the chat history in the session state
-if "messages" not in st.session_state:  # Check if "messages" exists in session state
-    st.session_state.messages = []  # Initialize "messages" as an empty list
+# Function to detect language and translate accordingly
+# Update this section to handle cases where the detected language isn't Telugu or English
+def translate_text(text):
+    try:
+        detected_lang = langdetect.detect(text)  # Detect input language
+        if detected_lang == "te":
+            source_lang = "Telugu"
+            target_lang = "English"
+        elif detected_lang == "en":
+            source_lang = "English"
+            target_lang = "Telugu"
+        else:
+            return "Sorry, I currently only support Telugu and English. Please enter text in either language."
 
-# Displaying the existing chat messages from the user and the chatbot
-for message in st.session_state.messages:  # For every message in the chat history
-    with st.chat_message(message["role"]):  # Create a chat message box
-        st.markdown(message["content"])  # Display the content of the message
+        model = genai.GenerativeModel("gemini-1.5-pro-latest")
+        prompt = f"Translate the following text from {source_lang} to {target_lang}:\n{text}"
+        response = model.generate_content(prompt)
+        return response.text if response and hasattr(response, 'text') else "Translation failed."
+    
+    except Exception as e:
+        return f"Sorry, an error occurred during translation: {str(e)}"
 
-# Accepting the user input and adding it to the message history
-if prompt := st.chat_input("మీరు ఎలా ఉన్నారు?"):  # If user enters a message
-    with st.chat_message("user"):  # Display user's message in a chat message box
-        st.markdown(prompt)  # Display the user's message
-    st.session_state.messages.append({"role": "user", "content": prompt})  # Add user's message to chat history
 
-# Generating and displaying the assistant's response in Telugu
-with st.chat_message("assistant"):  # Create a chat message box for the assistant's response
-    message_placeholder = st.empty()  # Create an empty placeholder for the assistant's message
-    full_response = ""  # Initialize an empty string for the full response
-    assistant_response = random.choice([
-        "హలో! నేను మీకు ఎలా సహాయం చేయగలనా?",
-        "హాయ్, మనిషి! నేను మీకు ఎలా సహాయం చేయగలను?",
-        "మీకు సహాయం కావాలా?"
-    ])  # Select assistant's response randomly in Telugu
+# Streamlit UI
+st.set_page_config(page_title="Telugu Chatbot Translator", layout="centered")
+st.title("🌍 Telugu Chatbot Translator")
 
-    # Simulate "typing" effect by gradually revealing the response
-    for chunk in assistant_response.split():  # For each word in the response
-        full_response += chunk + " "
-        time.sleep(0.05)  # Small delay between each word
-        message_placeholder.markdown(full_response + "▌")  # Update placeholder with current full response and a blinking cursor
+# User Input
+text = st.text_area("Enter text to translate:", "")
 
-    message_placeholder.markdown(full_response)  # Remove cursor and display full response
-    st.session_state.messages.append({"role": "assistant", "content": full_response})  # Add assistant's response to chat history
+if st.button("Translate"):
+    if text.strip():
+        translation = translate_text(text)
+        st.success("### Translation Result")
+        st.write(translation)
+    else:
+        st.warning("Please enter some text to translate.")
+
+st.markdown("---")
+st.caption("Powered by Google's Generative AI & Streamlit")
