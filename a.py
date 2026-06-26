@@ -8,17 +8,17 @@ from dotenv import load_dotenv
 
 # Load API key
 load_dotenv()
-GENAI_API_KEY = os.getenv("GENAI_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-if not GENAI_API_KEY:
-    st.error("API key is missing! Please set GENAI_API_KEY in .env file.")
+if not GOOGLE_API_KEY:
+    st.error("API key is missing! Please set GOOGLE_API_KEY in .env file.")
 else:
-    genai.configure(api_key=GENAI_API_KEY)
+    genai.configure(api_key=GOOGLE_API_KEY)
 
 # Load responses dataset
 responses = []
 try:
-    with open(r"C:\Users\Bhavani\OneDrive\Documents\Desktop\RTFP\responses.json", "r", encoding="utf-8") as file:
+    with open(r"responses.json", "r", encoding="utf-8") as file:
         responses = json.load(file)
 except Exception as e:
     st.error(f"Error loading dataset: {e}")
